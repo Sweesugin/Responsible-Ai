@@ -1,0 +1,44 @@
+import math
+import numpy as np
+from collections import Counter
+import re
+import nltk
+from nltk.util import ngrams
+
+nltk.download('punkt')
+
+def calculate_perplexity(text, n=2):
+    text = re.sub(r'[^\w\s]', '', text.lower())
+        tokens = nltk.word_tokenize(text)
+    
+    if not tokens:
+        return 0.0
+        n_grams = list(ngrams(tokens, n))
+    
+    if not n_grams:
+        return 0.0
+        n_gram_counts = Counter(n_grams)
+    
+    if n == 1:
+        total_count = len(tokens)
+    else:
+        n_minus_1_grams = list(ngrams(tokens, n - 1))
+        n_minus_1_counts = Counter(n_minus_1_grams)
+    
+    log_prob_sum = 0
+    N = len(n_grams)
+    
+    for gram in n_grams:
+        if n == 1:
+            prob = n_gram_counts[gram] / total_count
+        else:
+            prefix = gram[:-1]
+            prob = n_gram_counts[gram] / n_minus_1_counts[prefix]
+        
+        log_prob_sum += math.log(prob)
+    
+    perplexity = math.exp(-log_prob_sum / N)
+    return perplexity
+
+text = "I love machine learning and I love Python"
+print("Perplexity:", calculate_perplexity(text, n=2))
