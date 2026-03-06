@@ -1,0 +1,15 @@
+raw_data = {
+    "username": "user1",
+    "password_hash": "...",
+    "email": "user@example.com",
+    "location": "GPS COORDINATES",  
+    "age": 25  
+}
+def minimize_data(data):
+    # Only keep necessary fields
+    minimized = {k: v for k, v in data.items() if k in ["username", "email", "age"]}
+    return minimized
+
+minimized_data = minimize_data(raw_data)
+
+print(minimized_data)
