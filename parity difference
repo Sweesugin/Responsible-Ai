@@ -1,0 +1,29 @@
+import pandas as pd
+from aif360.datasets import StandardDataset
+from aif360.metrics import BinaryLabelDatasetMetric
+data = {
+    "age": [25, 45, 30, 50, 28, 40],
+    "sex": ["Male", "Female", "Male", "Female", "Male", "Female"],
+    "income": [">50K", "<=50K", ">50K", "<=50K", "<=50K", ">50K"]
+}
+
+df = pd.DataFrame(data)
+
+dataset = StandardDataset(
+    df=df,
+    label_name="income",
+    favorable_classes=[">50K"],
+    protected_attribute_names=["sex"],
+    privileged_classes=[["Male"]]
+)
+
+privileged_groups = [{"sex": 1}]      # Male
+unprivileged_groups = [{"sex": 0}]    # Female
+
+metric = BinaryLabelDatasetMetric(
+    dataset,
+    privileged_groups=privileged_groups,
+    unprivileged_groups=unprivileged_groups
+)
+
+print("Statistical Parity Difference:", metric.statistical_parity_difference())
