@@ -1,0 +1,10 @@
+import pandas as pd
+import re
+data={'name':['alice','bob','charlie'],
+      'email':['alice@gmail.com','bob@work.com','chatlie@com'],
+    'feature':[23,56,78]}
+df=pd.DataFrame(data)
+def mask_email(email):
+    return re.sub(r'(?<=.{2}).(?=.*@)','*',email)
+df['email']=df['email'].apply(mask_email)
+print(df)
