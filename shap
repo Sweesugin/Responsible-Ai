@@ -1,0 +1,86 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+from fairlearn.metrics import MetricFrame, selection_rate_difference
+from fairlearn.preprocessing import CorrelationRemover
+
+from diffprivlib.models import LogisticRegression as DPLogReg
+
+import shap
+np.random.seed(42)
+
+n_samples = 1000
+
+gender = np.random.binomial(1, 0.5, n_samples)
+income = np.random.normal(50000, 15000, n_samples)
+
+income = income + (gender * 10000)
+
+loan_approved = (income > 55000).astype(int)
+
+df = pd.DataFrame({
+    "gender": gender,
+    "income": income,
+    "loan_approved": loan_approved
+})
+
+
+X = df[["income", "gender"]]
+y = df["loan_approved"]
+
+sensitive = df["gender"]
+
+cr = CorrelationRemover(sensitive_feature_ids=["gender"])
+
+X_transformed = cr.fit_transform(X)
+
+X_train, X_test, y_train, y_test, sens_train, sens_test = train_test_split(
+    X_transformed, y, sensitive, test_size=0.3, random_state=42
+)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+mf = MetricFrame(
+    metrics={"accuracy": accuracy_score},
+    y_true=y_test,
+    y_pred=y_pred,
+    sensitive_features=sens_test
+)
+
+print("Overall Accuracy:", mf.overall)
+print("\nAccuracy by Group:")
+print(mf.by_group)
+
+
+# Fairness metric
+sr_diff = selection_rate_difference(
+    y_true=y_test,
+    y_pred=y_pred,
+    sensitive_features=sens_test
+)
+
+print("\nSelection Rate Difference:", sr_diff)
+
+dp_model = DPLogReg(epsilon=1.0)
+dp_model.fit(X_train, y_train)
+
+dp_pred = dp_model.predict(X_test)
+
+print("\nDP Model Accuracy:", accuracy_score(y_test, dp_pred))
+
+explainer = shap.Explainer(model, X_train)
+shap_values = explainer(X_test)
+
+print("\nSHAP explanation generated")
