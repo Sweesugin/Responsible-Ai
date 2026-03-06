@@ -1,0 +1,28 @@
+import pandas as pd
+from aif360.datasets import StandardDataset
+from aif360.metrics import BinaryLabelDatasetMetric
+
+# Load dataset (Adult Census dataset CSV)
+df = pd.read_csv("adult.csv")
+
+# Convert dataset into AIF360 StandardDataset format
+dataset = StandardDataset(
+    df=df,
+    label_name="income",
+    favorable_classes=[">50K"],
+    protected_attribute_names=["sex"],
+    privileged_classes=[["Male"]],
+)
+
+# Define privileged and unprivileged groups
+privileged_groups = [{"sex": 1}]        # Male
+unprivileged_groups = [{"sex": 0}]      # Female
+
+# Compute fairness metric
+metric = BinaryLabelDatasetMetric(
+    dataset,
+    privileged_groups=privileged_groups,
+    unprivileged_groups=unprivileged_groups
+)
+
+print("Statistical Parity Difference:", metric.statistical_parity_difference())
